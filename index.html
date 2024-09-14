@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spotify お気に入り登録アプリ</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <h1>Spotify お気に入り登録アプリ</h1>
+    <button id="login"><img src="img/login_img.png" alt="ログイン" id="loginImg"></button>
+    <button id="showFavorites">お気に入り番組を表示</button>
+    
+    
+    <h3>番組を検索してお気に入りに追加</h3>
+    <input type="text" id="searchKeyword" placeholder="キーワードで番組を検索">
+    <button id="searchShows">検索</button>
+    
+    <div id="searchResults"></div>
+    <div id="favoritesList"></div>
+
+    <script>
+        const clientId = '';  // Spotify APIから取得
+        const redirectUri = '';  // リダイレクト先のURL
+        let accessToken = '';  // トークン保存用
+
+        $(document).ready(function() {
+            // URLのハッシュ部分からアクセストークンを取得
+            const hash = window.location.hash.substring(1);
+            const params = new URLSearchParams(hash);
+            const tokenFromUrl = params.get('access_token');
+
+            // アクセストークンを sessionStorage に保存（リロード時にもトークンを保持するため）
+    if (tokenFromUrl) {
+        sessionStorage.setItem('spotify_access_token', tokenFromUrl);
+        accessToken = tokenFromUrl;
+        // ハッシュをクリア（URLをスッキリさせるため）
+        window.location.hash = '';
+    } else {
+        // sessionStorage からアクセストークンを取得
+        accessToken = sessionStorage.getItem('spotify_access_token');
+    }
+
+    // アクセストークンがあればログアウト画像、なければログイン画像を表示
+    if (accessToken) {
+        $('#loginImg').attr('src', 'img/logout_img.png');  // ログイン済みの場合は「ログアウト」画像
+        $('#loginImg').attr('alt', 'ログアウト');
+    } else {
+        $('#loginImg').attr('src', 'img/login_img.png');  // 未ログインの場合は「ログイン」画像
+        $('#loginImg').attr('alt', 'ログイン');
+    }
+});
+
+// ログインボタンのクリックイベント
+$('#login').on('click', function() {
+    if (accessToken) {
+        // ログアウト処理
+        if ($('#loginImg').attr('alt') === 'ログアウト') {
+            sessionStorage.removeItem('spotify_access_token');  // sessionStorage からトークンを削除
+            accessToken = '';  // トークン変数をクリア
+            $('#favoritesList').empty();  // お気に入りリストをクリア
+            $('#searchResults').empty();  // 検索結果をクリア
+            $('#loginImg').attr('src', 'img/login_img.png');  // 画像をログイン画像に切り替え
+            $('#loginImg').attr('alt', 'ログイン');
+            alert('ログアウトしました。');
+        }
+    } else {
+        // ログイン処理 (Spotify認証ページにリダイレクト)
+        const scopes = 'user-library-read user-library-modify';  // 必要なスコープ
+        const authUrl = `https://accounts.spotify.com/authorize?response_type=token&client_id=${clientId}&scope=${scopes}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+        window.location = authUrl;  // Spotifyの認証ページにリダイレクト
+    }
+});
+
+
+
+        // 3. キーワードで番組を検索する関数
+        $('#searchShows').on('click', function() {
+            const keyword = $('#searchKeyword').val();  // キーワードを取得
+            if (accessToken && keyword) {
+                // 検索結果を表示する前にお気に入りリストをクリア
+                $('#favoritesList').empty();  // ここでお気に入りリストを消す
+
+                fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(keyword)}&type=show&limit=10`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + accessToken
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const shows = data.shows.items;
+                    $('#searchResults').empty();  // 既存の検索結果をクリア
+                    if (shows.length > 0) {
+                        shows.forEach(show => {
+                            const thumbnail = show.images.length > 0 ? show.images[0].url : '';  // サムネイル画像
+                            const spotifyUrl = show.external_urls.spotify;  // Spotify上の番組URL
+                            const showName = show.name;
+                            const publisher = show.publisher;
+                            const showId = show.id;
+
+                            // 番組のHTML生成
+                            $('#searchResults').append(`
+                                <div>
+                                    <img src="${thumbnail}" alt="${showName}のサムネイル">
+                                    <a href="${spotifyUrl}" target="_blank">${showName} (${publisher})</a>
+                                    <button class="addFavorite" data-show-id="${showId}">お気に入りに追加</button>
+                                </div>
+                            `);
+                        });
+
+                        // 動的に生成されたお気に入り追加ボタンにクリックイベントを設定
+                        $('.addFavorite').on('click', function() {
+                            const showId = $(this).data('show-id');
+                            addFavoriteShow(showId);  // お気に入りに追加する関数を呼び出し
+                        });
+                    } else {
+                        $('#searchResults').append('<p>番組が見つかりませんでした。</p>');
+                    }
+                })
+                .catch(error => {
+                    alert('検索中にエラーが発生しました: ' + error.message);
+                });
+            } else {
+                alert('Spotifyにログインするか、検索キーワードを入力してください。');
+            }
+        });
+
+        // 4. お気に入りに番組を追加する関数
+        function addFavoriteShow(showId) {
+            if (accessToken && showId) {
+                fetch(`https://api.spotify.com/v1/me/shows?ids=${showId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': 'Bearer ' + accessToken,
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        alert('番組がお気に入りに追加されました!');
+                    } else {
+                        throw new Error('お気に入りに追加できませんでした。');
+                    }
+                })
+                .catch(error => {
+                    alert('エラーが発生しました: ' + error.message);
+                });
+            }
+        }
+
+        // 5. お気に入り番組を取得して表示する関数
+        $('#showFavorites').on('click', function() {
+            if (accessToken) {
+                // 検索結果を非表示にする
+                $('#searchResults').empty();
+
+                fetch('https://api.spotify.com/v1/me/shows', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + accessToken
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const shows = data.items;
+                    $('#favoritesList').empty();  // 既存のリストをクリア
+                    if (shows.length > 0) {
+                        shows.forEach(item => {
+                            const show = item.show;
+                            const thumbnail = show.images.length > 0 ? show.images[0].url : '';  // サムネイル画像
+                            const spotifyUrl = show.external_urls.spotify;  // Spotify上の番組URL
+                            const showName = show.name;
+                            const publisher = show.publisher;
+
+                            // 番組のHTML生成
+                            $('#favoritesList').append(`
+                                <div>
+                                    <img src="${thumbnail}" alt="${showName}のサムネイル">
+                                    <a href="${spotifyUrl}" target="_blank">${showName} (${publisher})</a>
+                                </div>
+                            `);
+                        });
+                    } else {
+                        $('#favoritesList').append('<p>お気に入り番組はありません。</p>');
+                    }
+                })
+                .catch(error => {
+                    alert('エラーが発生しました: ' + error.message);
+                });
+            } else {
+                alert('先にSpotifyにログインしてください。');
+            }
+        });
+
+    </script>
+</body>
+</html>
