@@ -15,9 +15,11 @@
     
     
     <h3>番組を検索してお気に入りに追加</h3>
+    <div id="search">
     <input type="text" id="searchKeyword" placeholder="キーワードで番組を検索">
     <button id="searchShows">検索</button>
-    
+    </div>
+
     <div id="searchResults"></div>
     <div id="favoritesList"></div>
 
@@ -106,7 +108,7 @@ $('#login').on('click', function() {
                                 <div>
                                     <img src="${thumbnail}" alt="${showName}のサムネイル">
                                     <a href="${spotifyUrl}" target="_blank">${showName} (${publisher})</a>
-                                    <button class="addFavorite" data-show-id="${showId}">お気に入りに追加</button>
+                                    <button class="addFavorite" data-show-id="${showId}">お気に入り登録</button>
                                 </div>
                             `);
                         });

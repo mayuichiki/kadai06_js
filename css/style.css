@@ -4,12 +4,14 @@ body {
 }
 
 /* 見出し */
-h1 {
+h1,
+h3,
+#search {
     text-align: center;	/*内容をセンタリング*/
 	position: fixed;
     font-family: 'M PLUS Rounded 1c', sans-serif;
     position: relative;
-    color: #333;
+    color: #7b7474;
 }
 
 h1:before {
@@ -24,6 +26,7 @@ h1:before {
     background-color: #5bc4d2;
 }
 
+/* ログインボタンの表示 */
 #login {
     display: flex;
     justify-content: center;
@@ -54,6 +57,7 @@ h1:before {
     }
 }
 
+/* お気に入りと検索結果の表示 */
 #showFavorites {
     display: flex;
     justify-content: center;
@@ -61,15 +65,15 @@ h1:before {
     min-width: 250px;
     margin: 0 auto;
     padding: .9em 2em;
-    border: 1px solid #f1443e;
+    border: 1px solid rgb(223, 86, 86);
     border-radius: 25px;
     background-color: #fff;
-    color: #f1443e;
+    color: rgb(223, 86, 86);
     font-size: 1em;
 }
 
 #showFavorites:hover {
-    background-color: #f1443e;
+    background-color: rgb(223, 86, 86);
     color: #fff;
 }
 
@@ -81,6 +85,19 @@ h1:before {
     content: '';
 }
 
+#favoritesList,
+#searchResults {
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 1em 1.5em;
+    box-shadow: 0 4px 4px rgb(0 0 0 / 5%), 0 2px 3px -2px rgb(0 0 0 / 1%);
+    background-image: linear-gradient(transparent calc(100% - 1px), #e6edf3 50%, #e6edf3), linear-gradient(90deg, transparent calc(100% - 1px), #e6edf3 50%, #e6edf3);
+    background-size: 15px 15px;
+    background-repeat: repeat;
+    background-color: #ffffff;
+    color: #7b7474;
+}
+
 #favoritesList img {
     width: 100px;
     height: auto;
@@ -89,7 +106,7 @@ h1:before {
 }
 #favoritesList a {
     text-decoration: none;
-    color: #1db954;
+    color: #7b7474;
 }
 #searchResults img {
     width: 100px;
@@ -99,5 +116,7 @@ h1:before {
 }
 #searchResults a {
     text-decoration: none;
-    color: #1db954;
+    color: #7b7474;
 }
+
+/* お気に入り登録ボタンの表示 */
